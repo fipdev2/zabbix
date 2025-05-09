@@ -81,7 +81,7 @@ services:
       ZBX_HOSTNAME: "zabbix7"
       ZBX_SERVER_HOST: "zabbix-server"
       ZBX_PASSIVE_ALLOW: "true"
-      ZBX_PASSIVESERVERS: "zabbix-server" 
+      # ZBX_PASSIVESERVERS: "zabbix-server" 
       ZBX_ENABLEREMOTECOMMANDS: "1"
       ZBX_ACTIVE_ALLOW: "false"
       ZBX_DEBUGLEVEL: "3"
@@ -94,7 +94,7 @@ services:
       - zabbix7
     stop_grace_period: 5s
    
-  db:
+  zabbix_db:
     container_name: "zabbix_db"
     image: postgres:15.6-bullseye
     restart: always
