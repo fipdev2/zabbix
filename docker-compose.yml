@@ -1,57 +1,63 @@
 version: '3.5'
+
 services:
   zabbix-server:
-    container_name: "zabbix-server"
-    image: zabbix/zabbix-server-pgsql:alpine-trunk
+    container_name: zabbix-server
+    image: zabbix/zabbix-server-mysql:alpine-trunk
+    depends_on:
+      - mysql
     restart: always
     ports:
-      - 10051:10051
+      - "10051:10051"
     networks:
       - zabbix7
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro 
+      - /etc/timezone:/etc/timezone:ro
     environment:
+      DB_SERVER_HOST: mysql
+      DB_PORT: 3306
+      MYSQL_USER: zabbix
+      MYSQL_PASSWORD: zabbix123
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: zabbix
       ZBX_CACHESIZE: 4096M
       ZBX_HISTORYCACHESIZE: 1024M
       ZBX_HISTORYINDEXCACHESIZE: 1024M
       ZBX_TRENDCACHESIZE: 1024M
       ZBX_VALUECACHESIZE: 1024M
-      DB_SERVER_HOST: "zabbix_db" 
-      DB_PORT: 5432
-      POSTGRES_USER: "zabbix"
-      POSTGRES_PASSWORD: "zabbix123"
-      POSTGRES_DB: "zabbix_db"
     stop_grace_period: 30s
     labels:
-      com.zabbix.description: "Zabbix server with PostgreSQL database support"
+      com.zabbix.description: "Zabbix server with MySQL support"
       com.zabbix.company: "Zabbix LLC"
       com.zabbix.component: "zabbix-server"
-      com.zabbix.dbtype: "pgsql"
+      com.zabbix.dbtype: "mysql"
       com.zabbix.os: "alpine"
 
-  zabbix-web-nginx-pgsql:
-    container_name: "zabbix-web"
-    image: zabbix/zabbix-web-nginx-pgsql:alpine-trunk
+  zabbix-web:
+    container_name: zabbix-web
+    image: zabbix/zabbix-web-nginx-mysql:alpine-trunk
+    depends_on:
+      - zabbix-server
     restart: always
     ports:
-      - 8080:8080
-      - 8443:8443
+      - "80:8080"
+      - "8443:8443"
+    networks:
+      - zabbix7
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - ./cert/:/usr/share/zabbix/conf/certs/:ro
-    networks:
-      - zabbix7
     environment:
-      DB_SERVER_HOST: "zabbix_db"
-      DB_PORT: 5432
-      POSTGRES_USER: "zabbix"
-      POSTGRES_PASSWORD: "zabbix123"
-      POSTGRES_DB: "zabbix_db"
-      ZBX_MEMORYLIMIT: "1024M"
-    depends_on:
-      - zabbix-server
+      DB_SERVER_HOST: mysql
+      DB_PORT: 3306
+      MYSQL_USER: zabbix
+      MYSQL_PASSWORD: zabbix123
+      MYSQL_DATABASE: zabbix
+      ZBX_MEMORYLIMIT: 1024M
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_SERVER_PORT: 10051
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
       interval: 10s
@@ -60,17 +66,19 @@ services:
       start_period: 30s
     stop_grace_period: 10s
     labels:
-      com.zabbix.description: "Zabbix frontend on Nginx web-server with PostgreSQL database support"
+      com.zabbix.description: "Zabbix frontend on Nginx with MySQL support"
       com.zabbix.company: "Zabbix LLC"
       com.zabbix.component: "zabbix-frontend"
       com.zabbix.webserver: "nginx"
-      com.zabbix.dbtype: "pgsql"
+      com.zabbix.dbtype: "mysql"
       com.zabbix.os: "alpine"
 
-  zabbix-db-agent2:
-    container_name: "zabbix-agent2"
+  zabbix-agent2:
+    container_name: zabbix-agent2
     image: zabbix/zabbix-agent2:alpine-trunk
     user: root
+    privileged: true
+    restart: always
     depends_on:
       - zabbix-server
     volumes:
@@ -78,41 +86,48 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /run/docker.sock:/var/run/docker.sock
     environment:
-      ZBX_HOSTNAME: "zabbix7"
-      ZBX_SERVER_HOST: "zabbix-server"
-      ZBX_PASSIVE_ALLOW: "true"
+      ZBX_HOSTNAME: zabbix7
+      ZBX_SERVER_HOST: 172.18.0.1
       # ZBX_PASSIVESERVERS: "zabbix-server" 
+      ZBX_PASSIVE_ALLOW: "true"
       ZBX_ENABLEREMOTECOMMANDS: "1"
       ZBX_ACTIVE_ALLOW: "false"
       ZBX_DEBUGLEVEL: "3"
-    privileged: true
     pid: "host"
     ports:
-      - 10050:10050
-      - 31999:31999 
+      - "10050:10050"
+      - "31999:31999"
     networks:
       - zabbix7
     stop_grace_period: 5s
-   
-  zabbix_db:
-    container_name: "zabbix_db"
-    image: postgres:15.6-bullseye
+
+  mysql:
+    container_name: mysql
+    image: mysql:8.0-oracle
     restart: always
-    volumes:
-     - zbx_db15:/var/lib/postgresql/data
     ports:
-     - 5432:5432
+      - "3306:3306"
+    volumes:
+      - zbx_db:/var/lib/mysql
     networks:
-     - zabbix7
+      - zabbix7
+    command:
+      - --character-set-server=utf8
+      - --collation-server=utf8_bin
+      - --default-authentication-plugin=mysql_native_password
     environment:
-     POSTGRES_USER: "zabbix"
-     POSTGRES_PASSWORD: "zabbix123"
-     POSTGRES_DB: "zabbix_db"
-
-
-
+      MYSQL_DATABASE: "zabbix"
+      MYSQL_USER: "zabbix"
+      MYSQL_PASSWORD: "zabbix_pwd"
+      MYSQL_ROOT_PASSWORD: "root123"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 networks:
   zabbix7:
-   driver: bridge
+    driver: bridge
+
 volumes:
-  zbx_db15:
+  zbx_db:
