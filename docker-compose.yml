@@ -17,10 +17,10 @@ services:
     environment:
       DB_SERVER_HOST: mysql
       DB_PORT: 3306
-      MYSQL_USER: zabbix
-      MYSQL_PASSWORD: zabbix123
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: zabbix
+      MYSQL_USER: "${MYSQL_USER:-zabbix}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-zabbix123}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-root123}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-zabbix}"
       ZBX_CACHESIZE: 4096M
       ZBX_HISTORYCACHESIZE: 1024M
       ZBX_HISTORYINDEXCACHESIZE: 1024M
@@ -52,9 +52,9 @@ services:
     environment:
       DB_SERVER_HOST: mysql
       DB_PORT: 3306
-      MYSQL_USER: zabbix
-      MYSQL_PASSWORD: zabbix123
-      MYSQL_DATABASE: zabbix
+      MYSQL_USER: "${MYSQL_USER:-zabbix}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-zabbix123}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-zabbix}"
       ZBX_MEMORYLIMIT: 1024M
       ZBX_SERVER_HOST: zabbix-server
       ZBX_SERVER_PORT: 10051
@@ -116,10 +116,10 @@ services:
       - --collation-server=utf8_bin
       - --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_DATABASE: "zabbix"
-      MYSQL_USER: "zabbix"
-      MYSQL_PASSWORD: "zabbix_pwd"
-      MYSQL_ROOT_PASSWORD: "root123"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-zabbix}"
+      MYSQL_USER: "${MYSQL_USER:-zabbix}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-zabbix123}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-root123}"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
