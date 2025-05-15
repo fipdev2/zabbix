@@ -106,7 +106,7 @@ services:
     image: mysql:8.0-oracle
     restart: always
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT}:3306"
     volumes:
       - zbx_db:/var/lib/mysql
     networks:
