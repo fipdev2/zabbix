@@ -1,9 +1,7 @@
-version: '3.5'
-
 services:
   zabbix-server:
     container_name: zabbix-server
-    image: zabbix/zabbix-server-mysql:alpine-trunk
+    image: zabbix/zabbix-server-mysql:alpine-7.2-latest
     depends_on:
       - mysql
     restart: always
@@ -36,7 +34,7 @@ services:
 
   zabbix-web:
     container_name: zabbix-web
-    image: zabbix/zabbix-web-nginx-mysql:alpine-trunk
+    image: zabbix/zabbix-web-nginx-mysql:alpine-7.2-latest
     depends_on:
       - zabbix-server
     restart: always
@@ -75,7 +73,7 @@ services:
 
   zabbix-agent2:
     container_name: zabbix-agent2
-    image: zabbix/zabbix-agent2:alpine-trunk
+    image: zabbix/zabbix-agent2:alpine-7.2-latest
     user: root
     privileged: true
     restart: always
